@@ -101,10 +101,11 @@ public class GeminiClient implements LlmClient {
         // The structure follows Google's generativeai REST API format.
         return """
                 {
-                  "system_instruction": {
+                  "systemInstruction": {
                     "parts": [{"text": %s}]
                   },
                   "contents": [{
+                    "role": "user",
                     "parts": [{"text": %s}]
                   }],
                   "generationConfig": {
