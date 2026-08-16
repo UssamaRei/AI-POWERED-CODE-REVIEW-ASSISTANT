@@ -43,9 +43,11 @@ jobs:
           fetch-depth: 0  # Full history needed for diff analysis
 
       - name: Run AI Code Review
-        uses: your-username/ai-code-review-assistant@v1
+        uses: UssamaRei/AI-POWERED-CODE-REVIEW-ASSISTANT@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          groq_api_key: ${{ secrets.GROQ_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           severity_threshold: 'SUGGESTION'
           max_files: '15'
