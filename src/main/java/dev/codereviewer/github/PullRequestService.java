@@ -115,18 +115,10 @@ public class PullRequestService {
     }
 
     /**
-     * Determines if a file should be reviewed based on its extension and the configured language.
+     * Determines if a file should be reviewed based on its extension and the configured language filter.
      */
     private boolean isReviewableFile(String filename) {
-        if (filename == null) return false;
-
-        return switch (reviewLanguage.toLowerCase()) {
-            case "java" -> filename.endsWith(".java");
-            case "python" -> filename.endsWith(".py");
-            case "javascript", "js" -> filename.endsWith(".js") || filename.endsWith(".jsx")
-                    || filename.endsWith(".ts") || filename.endsWith(".tsx");
-            default -> filename.endsWith("." + reviewLanguage);
-        };
+        return dev.codereviewer.util.LanguageDetector.isReviewable(filename, reviewLanguage);
     }
 
     /**

@@ -69,7 +69,7 @@ public final class ReviewConfig {
         this.baseRef = Objects.requireNonNull(builder.baseRef, "Base ref is required");
         this.geminiApiKey = Objects.requireNonNull(builder.geminiApiKey, "Gemini API key is required");
         this.groqApiKey = builder.groqApiKey; // nullable
-        this.reviewLanguage = builder.reviewLanguage != null ? builder.reviewLanguage : "java";
+        this.reviewLanguage = builder.reviewLanguage != null ? builder.reviewLanguage : "all";
         this.severityThreshold = builder.severityThreshold != null ? builder.severityThreshold : Severity.SUGGESTION;
         this.maxFiles = builder.maxFiles > 0 ? builder.maxFiles : 15;
         this.workspacePath = builder.workspacePath != null ? builder.workspacePath : ".";
@@ -113,7 +113,7 @@ public final class ReviewConfig {
         // Action inputs (GitHub prefixes them with INPUT_ and uppercases)
         builder.geminiApiKey = requireEnv("INPUT_GEMINI_API_KEY");
         builder.groqApiKey = getEnv("INPUT_GROQ_API_KEY", null);
-        builder.reviewLanguage = getEnv("INPUT_REVIEW_LANGUAGE", "java");
+        builder.reviewLanguage = getEnv("INPUT_REVIEW_LANGUAGE", "all");
         builder.maxFiles = parseIntEnv("INPUT_MAX_FILES", 15);
 
         String threshold = getEnv("INPUT_SEVERITY_THRESHOLD", "SUGGESTION");

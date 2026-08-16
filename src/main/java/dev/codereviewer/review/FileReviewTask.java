@@ -77,9 +77,10 @@ public class FileReviewTask implements Callable<FileReviewTask.Result> {
             relatedContext = ContextChunker.fitToLimit(
                     changedFile.patch(), methodBodies, relatedContext);
 
-            // Step 6: Build the LLM prompt
-            String systemPrompt = PromptBuilder.buildSystemPrompt();
-            String userPrompt = PromptBuilder.buildFileReviewPrompt(codeContext, relatedContext);
+            // Step 6: Build the language-tailored LLM prompt
+            String language = dev.codereviewer.util.LanguageDetector.detectLanguage(filename);
+            String systemPrompt = PromptBuilder.buildSystemPrompt(language);
+            String userPrompt = PromptBuilder.buildFileReviewPrompt(codeContext, relatedContext, language);
 
             // Step 7: Call the LLM
             String llmResponse = llmRouter.chat(systemPrompt, userPrompt);

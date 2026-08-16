@@ -15,9 +15,9 @@ inputs:
     required: false
     default: ''
   review_language:
-    description: 'Programming language to review (java, python, javascript)'
+    description: 'Programming language(s) to review: all (default), or comma-separated e.g. java,cs,python,ts'
     required: false
-    default: 'java'
+    default: 'all'
   severity_threshold:
     description: 'Minimum severity to post as comments (CRITICAL, WARNING, SUGGESTION, NITPICK)'
     required: false

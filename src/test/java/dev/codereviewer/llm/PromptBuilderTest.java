@@ -106,4 +106,21 @@ class PromptBuilderTest {
         // Should NOT include structure section since parse failed
         assertFalse(prompt.contains("### Structure"));
     }
+
+    @Test
+    @DisplayName("Language-specific system prompts include specialized guidelines")
+    void languageSpecificSystemPrompts() {
+        String csharpPrompt = PromptBuilder.buildSystemPrompt("C#");
+        assertTrue(csharpPrompt.contains("C#"));
+        assertTrue(csharpPrompt.contains("IDisposable"));
+        assertTrue(csharpPrompt.contains("async/await"));
+
+        String pythonPrompt = PromptBuilder.buildSystemPrompt("Python");
+        assertTrue(pythonPrompt.contains("Python"));
+        assertTrue(pythonPrompt.contains("context managers"));
+
+        String tsPrompt = PromptBuilder.buildSystemPrompt("TypeScript");
+        assertTrue(tsPrompt.contains("TypeScript"));
+        assertTrue(tsPrompt.contains("any"));
+    }
 }
