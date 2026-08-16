@@ -32,7 +32,7 @@ public class GeminiClient implements LlmClient {
     private static final Logger LOG = LoggerFactory.getLogger(GeminiClient.class);
 
     private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-    private static final String DEFAULT_MODEL = "gemini-2.0-flash";
+    private static final String DEFAULT_MODEL = "gemini-1.5-flash";
     private static final Duration TIMEOUT = Duration.ofSeconds(90);
 
     private final String apiKey;
@@ -44,7 +44,7 @@ public class GeminiClient implements LlmClient {
     }
 
     public GeminiClient(String apiKey, String model) {
-        this.apiKey = apiKey;
+        this.apiKey = apiKey != null ? apiKey.trim() : null;
         this.model = model;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
@@ -69,11 +69,10 @@ public class GeminiClient implements LlmClient {
 
         String url = BASE_URL + model + ":generateContent?key=" + apiKey;
 
-        // Build the Gemini request payload
-        // Using system_instruction for the system prompt and contents for user message
+        // Build the Gemini request payload using Jackson ObjectNode
         String requestBody = buildRequestBody(systemPrompt, userPrompt);
 
-        LOG.debug("Sending request to Gemini ({}) — prompt size: {} chars", model, userPrompt.length());
+        LOG.info("Sending request to Gemini ({}) — prompt size: {} chars", model, userPrompt.length());
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
@@ -89,35 +88,35 @@ public class GeminiClient implements LlmClient {
         } catch (LlmException e) {
             throw e;
         } catch (Exception e) {
+            LOG.error("Gemini request exception: {}", e.getMessage(), e);
             throw new LlmException("Gemini API call failed: " + e.getMessage(), e, true);
         }
     }
 
     /**
-     * Builds the Gemini API request JSON.
+     * Builds the Gemini API request JSON using Jackson.
      */
     private String buildRequestBody(String systemPrompt, String userPrompt) {
-        // Using raw JSON construction to avoid pulling in extra builder classes.
-        // The structure follows Google's generativeai REST API format.
-        return """
-                {
-                  "systemInstruction": {
-                    "parts": [{"text": %s}]
-                  },
-                  "contents": [{
-                    "role": "user",
-                    "parts": [{"text": %s}]
-                  }],
-                  "generationConfig": {
-                    "responseMimeType": "application/json",
-                    "temperature": 0.3,
-                    "maxOutputTokens": 8192
-                  }
-                }
-                """.formatted(
-                JsonUtil.toJson(systemPrompt),
-                JsonUtil.toJson(userPrompt)
-        );
+        com.fasterxml.jackson.databind.node.ObjectNode root = JsonUtil.mapper().createObjectNode();
+
+        if (systemPrompt != null && !systemPrompt.isBlank()) {
+            com.fasterxml.jackson.databind.node.ObjectNode sysInstruction = root.putObject("systemInstruction");
+            com.fasterxml.jackson.databind.node.ArrayNode sysParts = sysInstruction.putArray("parts");
+            sysParts.addObject().put("text", systemPrompt);
+        }
+
+        com.fasterxml.jackson.databind.node.ArrayNode contents = root.putArray("contents");
+        com.fasterxml.jackson.databind.node.ObjectNode userContent = contents.addObject();
+        userContent.put("role", "user");
+        com.fasterxml.jackson.databind.node.ArrayNode userParts = userContent.putArray("parts");
+        userParts.addObject().put("text", userPrompt);
+
+        com.fasterxml.jackson.databind.node.ObjectNode genConfig = root.putObject("generationConfig");
+        genConfig.put("responseMimeType", "application/json");
+        genConfig.put("temperature", 0.3);
+        genConfig.put("maxOutputTokens", 8192);
+
+        return JsonUtil.toJson(root);
     }
 
     /**
@@ -138,8 +137,8 @@ public class GeminiClient implements LlmClient {
         }
 
         if (status != 200) {
-            LOG.error("Gemini error ({}): {}", status, truncate(body, 500));
-            throw new LlmException("API error: " + status + " — " + truncate(body, 200), false, status);
+            LOG.error("Gemini error ({}): {}", status, body);
+            throw new LlmException("API error " + status + ": " + truncate(body, 200), false, status);
         }
 
         // Parse the response JSON to extract the text

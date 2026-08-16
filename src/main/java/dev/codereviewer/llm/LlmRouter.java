@@ -35,6 +35,7 @@ public class LlmRouter {
      * so we skip straight to fallback for remaining files.
      */
     private volatile boolean primaryRateLimited = false;
+    private volatile String lastError;
 
     public LlmRouter(LlmClient primary, LlmClient fallback) {
         this.primary = primary;
@@ -43,6 +44,10 @@ public class LlmRouter {
         LOG.info("LLM router initialized — primary: {}, fallback: {}",
                 primary.getName(),
                 fallback != null && fallback.isAvailable() ? fallback.getName() : "none");
+    }
+
+    public String getLastError() {
+        return lastError;
     }
 
     /**
@@ -66,7 +71,8 @@ public class LlmRouter {
                 LOG.info("Review completed via {}", primary.getName());
                 return result;
             } catch (Exception e) {
-                LOG.warn("{} failed: {}", primary.getName(), e.getMessage());
+                this.lastError = primary.getName() + " failed: " + e.getMessage();
+                LOG.error("{} failed: {}", primary.getName(), e.getMessage());
 
                 if (e instanceof LlmClient.LlmException le && le.getHttpStatus() == 429) {
                     primaryRateLimited = true;
@@ -89,11 +95,12 @@ public class LlmRouter {
                 LOG.info("Review completed via {} (fallback)", fallback.getName());
                 return result;
             } catch (Exception e) {
+                this.lastError = fallback.getName() + " (fallback) failed: " + e.getMessage();
                 LOG.error("{} (fallback) also failed: {}", fallback.getName(), e.getMessage());
             }
         }
 
-        LOG.error("All LLM providers failed — this file will be skipped");
+        LOG.error("All LLM providers failed — this file will be skipped (last error: {})", lastError);
         return null;
     }
 

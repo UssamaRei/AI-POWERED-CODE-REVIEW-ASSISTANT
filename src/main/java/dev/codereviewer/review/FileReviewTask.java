@@ -85,8 +85,9 @@ public class FileReviewTask implements Callable<FileReviewTask.Result> {
             String llmResponse = llmRouter.chat(systemPrompt, userPrompt);
 
             if (llmResponse == null) {
-                LOG.warn("✗ {} — LLM returned null (all providers failed)", filename);
-                return Result.skipped(filename, "LLM call failed");
+                String error = llmRouter.getLastError() != null ? llmRouter.getLastError() : "LLM call failed";
+                LOG.warn("✗ {} — {}", filename, error);
+                return Result.skipped(filename, error);
             }
 
             // Step 8: Parse the LLM response into findings
