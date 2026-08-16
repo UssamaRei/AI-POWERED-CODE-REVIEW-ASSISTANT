@@ -1,0 +1,10 @@
+.idea/
+*.iml
+target/
+*.class
+*.jar
+*.log
+.DS_Store
+.env
+*.bak
+CONTEXT.md

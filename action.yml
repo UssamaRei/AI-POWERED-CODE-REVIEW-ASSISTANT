@@ -1,0 +1,34 @@
+name: 'AI Code Review Assistant'
+description: 'AI-powered code review that analyzes PR diffs structurally and posts inline comments using free LLM APIs (Gemini/Groq)'
+author: 'Your Name'
+
+branding:
+  icon: 'code'
+  color: 'blue'
+
+inputs:
+  gemini_api_key:
+    description: 'Google Gemini API key (AI Studio free tier)'
+    required: true
+  groq_api_key:
+    description: 'Groq API key for fallback (optional, free tier)'
+    required: false
+    default: ''
+  review_language:
+    description: 'Programming language to review (java, python, javascript)'
+    required: false
+    default: 'java'
+  severity_threshold:
+    description: 'Minimum severity to post as comments (CRITICAL, WARNING, SUGGESTION, NITPICK)'
+    required: false
+    default: 'SUGGESTION'
+  max_files:
+    description: 'Maximum number of changed files to review per PR'
+    required: false
+    default: '15'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    GITHUB_TOKEN: ${{ github.token }}

@@ -1,0 +1,51 @@
+# =====================================================================
+# Example workflow: How end-users add AI Code Review to their repos
+# =====================================================================
+# Copy this file to your repository at:
+#   .github/workflows/ai-review.yml
+#
+# Prerequisites:
+#   1. Add your Gemini API key as a repository secret:
+#      Settings → Secrets → Actions → New repository secret
+#      Name: GEMINI_API_KEY
+#      Value: (your AI Studio API key from https://aistudio.google.com/apikey)
+#
+#   2. (Optional) Add Groq API key as GROQ_API_KEY for fallback
+#
+# That's it! Every new PR will automatically get AI code review comments.
+# =====================================================================
+
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# Required permissions for posting review comments
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+
+    # Skip review on draft PRs and bot-created PRs
+    if: |
+      !github.event.pull_request.draft &&
+      github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for diff analysis
+
+      - name: Run AI Code Review
+        uses: your-username/ai-code-review-assistant@v1
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          groq_api_key: ${{ secrets.GROQ_API_KEY }}
+          severity_threshold: 'SUGGESTION'
+          max_files: '15'

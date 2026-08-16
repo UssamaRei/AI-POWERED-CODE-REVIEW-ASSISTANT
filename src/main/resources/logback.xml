@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console appender with a structured, clean format for GitHub Actions logs -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Quieten noisy libraries -->
+    <logger name="org.kohsuke.github" level="WARN"/>
+    <logger name="com.github.javaparser" level="WARN"/>
+    <logger name="org.apache.hc" level="WARN"/>
+
+    <!-- Application logging at INFO by default -->
+    <logger name="dev.codereviewer" level="INFO"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
