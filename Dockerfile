@@ -24,7 +24,7 @@ RUN apk add --no-cache git
 WORKDIR /app
 
 # Copy the shaded uber-JAR from the build stage
-COPY --from=builder /build/target/ai-code-review-assistant-*.jar app.jar
+COPY --from=builder /build/target/app.jar /app/app.jar
 
 # Copy entrypoint script and ensure Unix line endings
 COPY entrypoint.sh /entrypoint.sh
