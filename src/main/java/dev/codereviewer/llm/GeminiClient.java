@@ -31,21 +31,27 @@ public class GeminiClient implements LlmClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(GeminiClient.class);
 
-    private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-    private static final String DEFAULT_MODEL = "gemini-1.5-flash";
+    private static final List<String> ENDPOINT_CANDIDATES = List.of(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest",
+            "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest"
+    );
     private static final Duration TIMEOUT = Duration.ofSeconds(90);
 
     private final String apiKey;
-    private final String model;
+    private final String customModel;
     private final HttpClient httpClient;
+    private volatile String workingEndpointBase;
 
     public GeminiClient(String apiKey) {
-        this(apiKey, DEFAULT_MODEL);
+        this(apiKey, null);
     }
 
-    public GeminiClient(String apiKey, String model) {
+    public GeminiClient(String apiKey, String customModel) {
         this.apiKey = apiKey != null ? apiKey.trim() : null;
-        this.model = model;
+        this.customModel = customModel;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
@@ -53,7 +59,7 @@ public class GeminiClient implements LlmClient {
 
     @Override
     public String getName() {
-        return "Gemini (" + model + ")";
+        return "Gemini (" + (workingEndpointBase != null ? workingEndpointBase.substring(workingEndpointBase.lastIndexOf('/') + 1) : (customModel != null ? customModel : "auto")) + ")";
     }
 
     @Override
@@ -67,13 +73,48 @@ public class GeminiClient implements LlmClient {
             throw new LlmException("Gemini API key not configured", false, -1);
         }
 
-        String url = BASE_URL + model + ":generateContent?key=" + apiKey;
-
-        // Build the Gemini request payload using Jackson ObjectNode
         String requestBody = buildRequestBody(systemPrompt, userPrompt);
 
-        LOG.info("Sending request to Gemini ({}) — prompt size: {} chars", model, userPrompt.length());
+        // If a working endpoint is already known or a custom model was given, use it
+        if (customModel != null) {
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/" + customModel + ":generateContent?key=" + apiKey;
+            return sendRequest(url, requestBody);
+        }
 
+        if (workingEndpointBase != null) {
+            String url = workingEndpointBase + ":generateContent?key=" + apiKey;
+            return sendRequest(url, requestBody);
+        }
+
+        // Try candidate endpoints until one succeeds
+        LlmException lastException = null;
+        for (String candidate : ENDPOINT_CANDIDATES) {
+            String url = candidate + ":generateContent?key=" + apiKey;
+            LOG.info("Trying Gemini endpoint: {}", candidate);
+
+            try {
+                String response = sendRequest(url, requestBody);
+                workingEndpointBase = candidate;
+                LOG.info("Successfully connected using Gemini endpoint: {}", candidate);
+                return response;
+            } catch (LlmException e) {
+                lastException = e;
+                if (e.getHttpStatus() == 404) {
+                    LOG.warn("Endpoint {} returned 404, trying next candidate...", candidate);
+                    continue;
+                }
+                // For authentication/permission errors (400, 401, 403), don't keep looping
+                throw e;
+            }
+        }
+
+        if (lastException != null) {
+            throw lastException;
+        }
+        throw new LlmException("All Gemini model endpoints failed", false, -1);
+    }
+
+    private String sendRequest(String url, String requestBody) throws LlmException {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -83,7 +124,6 @@ public class GeminiClient implements LlmClient {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
             return handleResponse(response);
         } catch (LlmException e) {
             throw e;
