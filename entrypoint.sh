@@ -10,8 +10,12 @@ echo "SHA:        ${GITHUB_SHA}"
 echo "============================================"
 
 # Validate we're running in a GitHub Actions context
+if [ -z "$GITHUB_TOKEN" ] && [ -n "$INPUT_GITHUB_TOKEN" ]; then
+    export GITHUB_TOKEN="$INPUT_GITHUB_TOKEN"
+fi
+
 if [ -z "$GITHUB_TOKEN" ]; then
-    echo "::error::GITHUB_TOKEN is not set. This action must run in a GitHub Actions workflow."
+    echo "::error::GITHUB_TOKEN is not set. Please provide 'github_token' or pass GITHUB_TOKEN env."
     exit 1
 fi
 

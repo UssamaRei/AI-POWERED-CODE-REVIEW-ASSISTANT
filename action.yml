@@ -1,6 +1,6 @@
 name: 'AI Code Review Assistant'
 description: 'AI-powered code review that analyzes PR diffs structurally and posts inline comments using free LLM APIs (Gemini/Groq)'
-author: 'Your Name'
+author: 'ussamarei'
 
 branding:
   icon: 'code'
@@ -26,9 +26,11 @@ inputs:
     description: 'Maximum number of changed files to review per PR'
     required: false
     default: '15'
+  github_token:
+    description: 'GitHub token for API access (defaults to github.token when passed via env or input)'
+    required: false
+    default: ''
 
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  env:
-    GITHUB_TOKEN: ${{ github.token }}

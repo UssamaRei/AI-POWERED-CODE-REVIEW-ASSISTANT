@@ -94,8 +94,15 @@ public final class ReviewConfig {
     public static ReviewConfig fromEnvironment() throws IOException {
         Builder builder = new Builder();
 
-        // GitHub-provided env vars
-        builder.githubToken = requireEnv("GITHUB_TOKEN");
+        // GitHub-provided env vars (supports GITHUB_TOKEN or INPUT_GITHUB_TOKEN)
+        String token = getEnv("GITHUB_TOKEN", null);
+        if (token == null || token.isBlank()) {
+            token = getEnv("INPUT_GITHUB_TOKEN", null);
+        }
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException("Required environment variable not set: GITHUB_TOKEN (or input 'github_token')");
+        }
+        builder.githubToken = token;
         builder.repository = requireEnv("GITHUB_REPOSITORY");
         builder.workspacePath = getEnv("GITHUB_WORKSPACE", ".");
 
