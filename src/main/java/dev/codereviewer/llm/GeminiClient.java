@@ -76,15 +76,25 @@ public class GeminiClient implements LlmClient {
 
         String requestBody = buildRequestBody(systemPrompt, userPrompt);
 
-        // If a working endpoint is already known or a custom model was given, use it
+        // If a custom model was given, use it directly
         if (customModel != null) {
             String url = "https://generativelanguage.googleapis.com/v1beta/models/" + customModel + ":generateContent?key=" + apiKey;
             return sendRequest(url, requestBody);
         }
 
+        // If a previously working endpoint exists, try it first
         if (workingEndpointBase != null) {
             String url = workingEndpointBase + ":generateContent?key=" + apiKey;
-            return sendRequest(url, requestBody);
+            try {
+                return sendRequest(url, requestBody);
+            } catch (LlmException e) {
+                if (e.getHttpStatus() == 503 || e.getHttpStatus() == 429 || e.getHttpStatus() >= 500) {
+                    LOG.warn("Cached endpoint {} returned {}, trying other candidates...", workingEndpointBase, e.getHttpStatus());
+                    workingEndpointBase = null;
+                } else {
+                    throw e;
+                }
+            }
         }
 
         // Try candidate endpoints until one succeeds
@@ -100,11 +110,12 @@ public class GeminiClient implements LlmClient {
                 return response;
             } catch (LlmException e) {
                 lastException = e;
-                if (e.getHttpStatus() == 404) {
-                    LOG.warn("Endpoint {} returned 404, trying next candidate...", candidate);
+                int status = e.getHttpStatus();
+                if (status == 404 || status == 503 || status == 429 || status >= 500) {
+                    LOG.warn("Endpoint {} returned {}, trying next candidate...", candidate, status);
                     continue;
                 }
-                // For authentication/permission errors (400, 401, 403), don't keep looping
+                // For client errors (400, 401, 403), fail fast
                 throw e;
             }
         }
