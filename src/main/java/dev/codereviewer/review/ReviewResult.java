@@ -22,6 +22,7 @@ public class ReviewResult {
     private final List<ReviewFinding> findings = new ArrayList<>();
     private final List<String> skippedFiles = new ArrayList<>();
     private final List<String> reviewedFiles = new ArrayList<>();
+    private final List<FileReviewTask.Result> fileResults = new ArrayList<>();
 
     /**
      * Adds findings from a single file's review.
@@ -29,6 +30,23 @@ public class ReviewResult {
     public synchronized void addFindings(String filename, List<ReviewFinding> fileFindings) {
         reviewedFiles.add(filename);
         findings.addAll(fileFindings);
+    }
+
+    /**
+     * Adds raw file result.
+     */
+    public synchronized void addFileResult(FileReviewTask.Result res) {
+        fileResults.add(res);
+        if (res.success()) {
+            reviewedFiles.add(res.filename());
+            findings.addAll(res.findings());
+        } else {
+            skippedFiles.add(res.filename() + " (" + res.skipReason() + ")");
+        }
+    }
+
+    public List<FileReviewTask.Result> getFileResults() {
+        return Collections.unmodifiableList(fileResults);
     }
 
     /**
@@ -61,11 +79,15 @@ public class ReviewResult {
      * Generates a markdown summary for the PR review comment.
      */
     public String generateSummary() {
+        int score = dev.codereviewer.metrics.ReviewMetricsExporter.calculateHealthScore(findings);
+        String grade = dev.codereviewer.metrics.ReviewMetricsExporter.getGrade(score);
+
         StringBuilder sb = new StringBuilder();
         sb.append("## 🤖 AI Code Review Summary\n\n");
+        sb.append("### 📊 Code Health Score: **").append(score).append(" / 100** (`Grade: ").append(grade).append("`)\n\n");
 
         if (findings.isEmpty()) {
-            sb.append("✅ **No issues found.** The code changes look good!\n\n");
+            sb.append("✅ **No issues found.** The code changes look clean and well-structured!\n\n");
         } else {
             Map<ReviewConfig.Severity, Long> counts = getSeverityCounts();
 

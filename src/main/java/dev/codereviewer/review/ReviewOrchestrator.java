@@ -85,7 +85,7 @@ public class ReviewOrchestrator {
 
             // Step 4: Publish the review
             LOG.info("───────────────────────────────────────────────────");
-            LOG.info("Review complete. Publishing results...");
+            LOG.info("Review complete. Publishing results and exporting metrics...");
 
             publisher.publishReview(
                     config.getPullRequestNumber(),
@@ -93,6 +93,9 @@ public class ReviewOrchestrator {
                     result,
                     config.getSeverityThreshold()
             );
+
+            // Step 5: Export structured review metrics for dashboard
+            dev.codereviewer.metrics.ReviewMetricsExporter.export(config, result.getFileResults());
 
             long elapsed = System.currentTimeMillis() - startTime;
             LOG.info("═══════════════════════════════════════════════════");
@@ -137,12 +140,7 @@ public class ReviewOrchestrator {
             for (Future<FileReviewTask.Result> future : futures) {
                 try {
                     FileReviewTask.Result fileResult = future.get(120, TimeUnit.SECONDS);
-
-                    if (fileResult.success()) {
-                        result.addFindings(fileResult.filename(), fileResult.findings());
-                    } else {
-                        result.addSkippedFile(fileResult.filename(), fileResult.skipReason());
-                    }
+                    result.addFileResult(fileResult);
                 } catch (TimeoutException e) {
                     LOG.warn("File review timed out (120s limit)");
                     future.cancel(true);

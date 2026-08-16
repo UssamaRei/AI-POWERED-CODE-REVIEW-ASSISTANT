@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Code Review Assistant — Team Analytics Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">🤖</div>
+                <div class="brand-text">
+                    <h2>CodeReviewer</h2>
+                    <span class="badge-ai">AI-POWERED</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#overview" class="nav-item active" id="nav-overview">
+                    <span class="nav-icon">📊</span> Overview
+                </a>
+                <a href="#trends" class="nav-item" id="nav-trends">
+                    <span class="nav-icon">📈</span> Trends & Categories
+                </a>
+                <a href="#hotspots" class="nav-item" id="nav-hotspots">
+                    <span class="nav-icon">🔥</span> File Hotspots
+                </a>
+                <a href="#history" class="nav-item" id="nav-history">
+                    <span class="nav-icon">📋</span> PR History
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="data-source-status">
+                    <span class="status-dot live" id="source-indicator"></span>
+                    <span id="source-label">Live Data</span>
+                </div>
+                <button class="btn-secondary btn-sm" id="btn-reload" title="Refresh data">
+                    🔄 Refresh
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header Bar -->
+            <header class="top-header">
+                <div>
+                    <h1 class="page-title">Team Quality & Code Review Analytics</h1>
+                    <p class="page-subtitle">Real-time telemetry and defect prevention from AI-powered automated pull request reviews.</p>
+                </div>
+                <div class="header-actions">
+                    <label class="file-upload-btn" title="Upload review JSON">
+                        📂 Import JSON
+                        <input type="file" id="json-file-input" accept=".json" style="display:none">
+                    </label>
+                    <button class="btn-demo" id="btn-toggle-demo">
+                        ✨ Toggle Demo Data
+                    </button>
+                </div>
+            </header>
+
+            <!-- KPI Summary Cards -->
+            <section class="kpi-grid" id="overview">
+                <!-- Health Score Card -->
+                <div class="kpi-card card-glow-primary">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Average Health Score</span>
+                        <span class="grade-badge" id="kpi-grade">A</span>
+                    </div>
+                    <div class="kpi-value-row">
+                        <span class="kpi-number" id="kpi-health-score">92</span>
+                        <span class="kpi-unit">/ 100</span>
+                    </div>
+                    <div class="kpi-footer">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="health-progress" style="width: 92%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total PRs Reviewed -->
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Pull Requests Reviewed</span>
+                        <span class="kpi-icon">🚀</span>
+                    </div>
+                    <div class="kpi-value-row">
+                        <span class="kpi-number" id="kpi-total-prs">14</span>
+                    </div>
+                    <div class="kpi-footer text-muted" id="kpi-files-reviewed">
+                        📁 48 files analyzed
+                    </div>
+                </div>
+
+                <!-- Bugs Prevented -->
+                <div class="kpi-card card-glow-danger">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Flaws Prevented</span>
+                        <span class="kpi-icon">🛡️</span>
+                    </div>
+                    <div class="kpi-value-row">
+                        <span class="kpi-number" id="kpi-bugs-prevented">38</span>
+                    </div>
+                    <div class="kpi-footer">
+                        <span class="pill pill-critical" id="kpi-critical-count">🔴 12 Critical</span>
+                        <span class="pill pill-warning" id="kpi-warning-count">🟡 26 Warning</span>
+                    </div>
+                </div>
+
+                <!-- Multi-Language Coverage -->
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Active Languages</span>
+                        <span class="kpi-icon">🌐</span>
+                    </div>
+                    <div class="kpi-value-row">
+                        <span class="kpi-number" id="kpi-languages-count">4</span>
+                    </div>
+                    <div class="kpi-footer languages-list" id="kpi-languages-list">
+                        <span class="lang-tag">Java</span>
+                        <span class="lang-tag">C#</span>
+                        <span class="lang-tag">Python</span>
+                        <span class="lang-tag">TypeScript</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-grid" id="trends">
+                <!-- Quality Score Trend -->
+                <div class="chart-card chart-wide">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">Code Health & Findings Trend</h3>
+                            <p class="card-subtitle">Quality score and total findings per pull request over time</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Category Doughnut -->
+                <div class="chart-card">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">Defects by Category</h3>
+                            <p class="card-subtitle">Distribution of security, performance, and leak issues</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Severity Distribution -->
+                <div class="chart-card">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">Severity Breakdown</h3>
+                            <p class="card-subtitle">Critical vulnerabilities vs warnings and suggestions</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="severityChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- File Hotspots & PR History Grid -->
+            <div class="tables-grid">
+                <!-- Top File Hotspots -->
+                <section class="table-card" id="hotspots">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">🔥 Defect Hotspots</h3>
+                            <p class="card-subtitle">Files with highest concentration of review findings</p>
+                        </div>
+                    </div>
+                    <div class="hotspots-list" id="hotspots-container">
+                        <!-- Rendered by JS -->
+                    </div>
+                </section>
+
+                <!-- Review History Table -->
+                <section class="table-card table-wide" id="history">
+                    <div class="card-header space-between">
+                        <div>
+                            <h3 class="card-title">📋 Pull Request Review History</h3>
+                            <p class="card-subtitle">Comprehensive log of all automated reviews</p>
+                        </div>
+                        <div class="table-search-box">
+                            <input type="text" id="table-search" placeholder="Search PR #, branch, or file...">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>PR #</th>
+                                    <th>Health Score</th>
+                                    <th>Grade</th>
+                                    <th>Findings Breakdown</th>
+                                    <th>Languages</th>
+                                    <th>Timestamp</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <!-- Rendered dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- PR Findings Detail Modal -->
+    <div class="modal-backdrop" id="pr-modal" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title-row">
+                    <h3 id="modal-title">Pull Request Review Details</h3>
+                    <span class="grade-badge" id="modal-grade">A</span>
+                </div>
+                <button class="btn-close" id="btn-close-modal">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Injected via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
