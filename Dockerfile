@@ -19,7 +19,7 @@ RUN mvn clean package -DskipTests -B
 FROM eclipse-temurin:21-jre-alpine
 
 # Install git (needed for checkout/diff operations in the Action)
-RUN apk add --no-cache git
+RUN apk update --no-cache && apk add --no-cache git ca-certificates
 
 WORKDIR /app
 
