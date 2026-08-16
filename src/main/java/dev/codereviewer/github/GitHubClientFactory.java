@@ -34,7 +34,7 @@ public final class GitHubClientFactory {
                 .withOAuthToken(token)
                 .build();
 
-        LOG.info("GitHub client created, authenticated as: {}", github.getMyself().getLogin());
+        LOG.info("GitHub client created successfully");
         return github;
     }
 
