@@ -1,22 +1,17 @@
 # ============================================================
 # Stage 1: Build the Java application
 # ============================================================
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 
 WORKDIR /build
 
-# Copy Maven wrapper and POM first for layer caching
+# Copy POM first for layer caching
 COPY pom.xml ./
-COPY .mvn .mvn
-COPY mvnw ./
-RUN chmod +x mvnw
-
-# Download dependencies (cached unless pom.xml changes)
-RUN ./mvnw dependency:go-offline -B
+RUN mvn dependency:go-offline -B
 
 # Copy source and build
 COPY src ./src
-RUN ./mvnw clean package -DskipTests -B
+RUN mvn clean package -DskipTests -B
 
 # ============================================================
 # Stage 2: Runtime image
@@ -31,9 +26,10 @@ WORKDIR /app
 # Copy the shaded uber-JAR from the build stage
 COPY --from=builder /build/target/ai-code-review-assistant-*.jar app.jar
 
-# Copy entrypoint script
+# Copy entrypoint script and ensure Unix line endings
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # GitHub Actions runs containers as root by default
 ENTRYPOINT ["/entrypoint.sh"]
+
