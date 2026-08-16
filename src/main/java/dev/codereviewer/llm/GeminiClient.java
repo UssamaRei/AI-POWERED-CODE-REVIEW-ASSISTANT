@@ -32,7 +32,7 @@ public class GeminiClient implements LlmClient {
     private static final Logger LOG = LoggerFactory.getLogger(GeminiClient.class);
 
     private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-    private static final String DEFAULT_MODEL = "gemini-2.5-flash";
+    private static final String DEFAULT_MODEL = "gemini-2.0-flash";
     private static final Duration TIMEOUT = Duration.ofSeconds(90);
 
     private final String apiKey;

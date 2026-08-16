@@ -9,6 +9,11 @@ echo "Event:      ${GITHUB_EVENT_NAME}"
 echo "SHA:        ${GITHUB_SHA}"
 echo "============================================"
 
+# If invoked with custom command like "java -version", execute it directly
+if [ "$1" = "java" ] || [ "$1" = "--version" ] || [ "$1" = "-version" ]; then
+    exec "$@"
+fi
+
 # Validate we're running in a GitHub Actions context
 if [ -z "$GITHUB_TOKEN" ] && [ -n "$INPUT_GITHUB_TOKEN" ]; then
     export GITHUB_TOKEN="$INPUT_GITHUB_TOKEN"
